@@ -10,8 +10,8 @@ import BigNumber from 'bignumber.js'
 // import { Client, getChainIds, getDefaultClientUrl} from '@xchainjs/xchain-thorchain'
 import { Client } from '@xchainjs/xchain-ethereum'
 import {genKeystore, keystorelocation, keypasswd} from './genkey.js'
-
-
+import { Wallet } from './wallet.js'
+// import { Wallet } from '@xchainjs/xchain-thorchain-amm'
 
 const theUrl = 'https://midgard.thorchain.info/v2/thorchain/inbound_addresses'
 
@@ -28,6 +28,26 @@ async function main(){
 
 }
 }
+
+
+const newWallet  = async () => {
+      const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
+      let phrase = await decryptFromKeystore(keystore1, keypasswd)
+      const combowallet= new Wallet(Network.Mainnet, phrase)
+      const balances = await combowallet.getAllBalances()
+     console.log(balances)
+      // let address = ethClient.getAddress()
+     // console.log(`Address: ${address}`)
+      // try {
+      //     const balance = await ethClient.getBalance(address)                                                                                                                                                                                                 
+      //    console.log(balance)                                                                                                    
+      //     let assetAmount = (baseToAsset(balance[0].amount)).amount()                                                            
+      //     console.log(`With balance: ${assetAmount}`)                                                                            
+      //     console.log(`Address ${address} With balance: ${assetAmount}`)                                                         
+      // } catch (error) {                                                                                                          
+      //    console.log(`Caught ${error}`)                                                                                          
+      // }                                                                                                                          
+  }                          
 
 const ethWallet  = async () => {
     const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
@@ -118,22 +138,21 @@ const  getInboundAddress = async() => {
 
 }
 
-//  function print(estimate: SwapEstimate, input: CryptoAmount) {
-//   const expanded = {
-//     input: input.formatedAssetString(),
-//     totalFees: {
-//       inboundFee: estimate.totalFees.inboundFee.formatedAssetString(),
-//       swapFee: estimate.totalFees.swapFee.formatedAssetString(),
-//       outboundFee: estimate.totalFees.outboundFee.formatedAssetString(),
-//       affiliateFee: estimate.totalFees.affiliateFee.formatedAssetString(),
-//     },
-//     slipPercentage: estimate.slipPercentage.toFixed(),
-//     netOutput: estimate.netOutput.formatedAssetString(),
-//     waitTimeSeconds: estimate.waitTimeSeconds.toFixed(),
-//     canSwap: estimate.canSwap,
-//     errors: estimate.errors,
-//   }
-//   console.log(expanded)
+// const expanded = {
+//   input: input.formatedAssetString(),
+//   totalFees: {
+//     inboundFee: estimate.totalFees.inboundFee.formatedAssetString(),
+//     swapFee: estimate.totalFees.swapFee.formatedAssetString(),
+//     outboundFee: estimate.totalFees.outboundFee.formatedAssetString(),
+//     affiliateFee: estimate.totalFees.affiliateFee.formatedAssetString(),
+//   },
+//   slipPercentage: estimate.slipPercentage.toFixed(),
+//   netOutput: estimate.netOutput.formatedAssetString(),
+//   waitTimeSeconds: estimate.waitTimeSeconds.toFixed(),
+//   canSwap: estimate.canSwap,
+//   errors: estimate.errors,
+// }
+// console.log(expanded)
 // }
 
 // const estSwap = async() => {
@@ -163,8 +182,8 @@ const  getInboundAddress = async() => {
 // }
 // }
 
-ethWallet()
+newWallet()
 // main()
-// estSwap()
+ethWallet()
 getbtcPool()
 getInboundAddress()
