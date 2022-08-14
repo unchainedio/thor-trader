@@ -114,7 +114,7 @@ const run = async (wallet: Wallet, amm: ThorchainAMM) => {
             // affiliateFeePercent: 0.003, //optional
             slipLimit: new BigNumber('0.03'), //optional
             }              
-            beginSwap(combowallet, busdswapParams, thorchainAmm)
+            await beginSwap(combowallet, busdswapParams, thorchainAmm)
         break;
                 }
     }
