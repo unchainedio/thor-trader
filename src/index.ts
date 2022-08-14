@@ -14,6 +14,8 @@ import {genKeystore, keystorelocation, keypasswd} from './genkey.js'
 // import { Wallet } from './wallet.js'
 import { Wallet } from '@xchainjs/xchain-thorchain-amm'
 import {balance} from '@cosmos-client/core/cjs/rest/bank/module.js'
+// import {EstimateSwapParams, EstimateSwapParams} from './types.js'
+// import {Wallet} from 'ethers'
 // import {Midgard} from './utils/midgard.js'
 // import {Wallet} from 'ethers'
 
@@ -25,7 +27,7 @@ const btcpoolUrl= 'https://midgard.thorchain.info/v2/pool/BTC.BTC'
 
 
 
-const run = async (wallet: Wallet, mg: Midgard, amm: ThorchainAMM) => {
+const run = async (wallet: Wallet, amm: ThorchainAMM) => {
     // const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
     // let phrase = await decryptFromKeystore(keystore1, keypasswd)
     let toRune : boolean
@@ -35,9 +37,7 @@ const run = async (wallet: Wallet, mg: Midgard, amm: ThorchainAMM) => {
     // console.log(combowallet)     
     
     const allBalances = await combowallet.getAllBalances()
-    
-    
-    const midgard = mg                                                                                                                                                                                    
+                                                                                                                                                                       
     const thorchainAmm = amm
     const thor = _.filter(allBalances, { 'chain': 'THOR' })
     const bnb = _.filter(allBalances, { 'chain': 'BNB' })
@@ -90,9 +90,8 @@ const run = async (wallet: Wallet, mg: Midgard, amm: ThorchainAMM) => {
                                 input: new CryptoAmount(bnb[0].balances[1].amount, assetFromString('BNB.BUSD-BD1')),
                    // input: netswap,
                                 destinationAsset: RUNE,
-                  // affiliateFeePercent: 0.003, //optional                                                                                                                                                                                                           
-                                slipLimit: new BigNumber('0.03'), //optional                                                                                                                                                                                             
-                                }
+                  // affiliateFeePercent: 0.003, //optional                                                                                                                                                                                                                     slipLimit: new BigNumber('0.03'), //optional                                                                                                                                                                                             }
+            }
             try{                                                                                                                                                                                                                                               
                 const estimate = await thorchainAmm.estimateSwap(swapParams)
                 print(estimate, swapParams.input)                                                                                                                                                                                                                
@@ -105,88 +104,37 @@ const run = async (wallet: Wallet, mg: Midgard, amm: ThorchainAMM) => {
 
         case false:
             console.log("toRune is false")
+            const swap = new CryptoAmount(thor[0].balances[0].amount, assetFromString('THOR.RUNE')) 
+            const fees = new CryptoAmount(baseAmount('10000000'), assetFromString('THOR.RUNE'))
+            const netswap = swap.minus(fees)
+            const busdswapParams: EstimateSwapParams = {
+                //input: new CryptoAmount(thor[0].balances[0].amount, assetFromString('THOR.RUNE')),
+                input: netswap,
+                destinationAsset: BUSD,
+            // affiliateFeePercent: 0.003, //optional
+            slipLimit: new BigNumber('0.03'), //optional
+            }              
+            beginSwap(combowallet, busdswapParams, thorchainAmm)
         break;
                 }
     }
 
-    
-
-    // if(baseToAsset(thor[0].balances[0].amount).gte(1)){ 
-       
-      // console.log(BUSD)
-      // if (!BUSD) throw Error('bad asset')
-      //  const swap = new CryptoAmount(thor[0].balances[0].amount, assetFromString('THOR.RUNE'))
-      //  const fees = new CryptoAmount(baseAmount('10000000'), assetFromString('THOR.RUNE'))
-      //  const netswap = swap.minus(fees)
-      
-      // const swapParams: EstimateSwapParams = {
-      //           // input: new CryptoAmount(thor[0].balances[0].amount, AssetRuneNative),
-      //          input: netswap,
-      //         destinationAsset: BUSD,
-      //         // affiliateFeePercent: 0.003, //optional                                                                                                                                                                                                       
-      //         slipLimit: new BigNumber('0.03'), //optional
-      //         }
-      //   try{
-      //       const estimate = await thorchainAmm.estimateSwap(swapParams)
-      //       print(estimate, swapParams.input)
-      //       const transaction = await thorchainAmm.doSwap(combowallet, swapParams, bnb[0].address)
-      //       console.log(transaction)
-      //       }   catch (e) {
-      //               console.error(e)
-      //           } 
-    // }
-
-//      if(baseToAsset(bnb[0].balances[1].amount).gte(1)){ 
-         
-//         console.log(RUNE)
-//         if (!RUNE) throw Error('bad asset')
-//          // const swap = new CryptoAmount(thor[0].balances[0].amount, assetFromString('THOR.RUNE'))
-//          // const fees = new CryptoAmount(baseAmount('10000000'), assetFromString('THOR.RUNE'))
-//          // const netswap = swap.minus(fees)
-        
-// >>      const swapParams: EstimateSwapParams = {
-//                   input: new CryptoAmount(bnb[0].balances[1].amount, assetFromString('BNB.BUSD-BD1')),
-//                  // input: netswap,
-//                 destinationAsset: RUNE,
-//                 // affiliateFeePercent: 0.003, //optional                                                                                                                                                                                                         
-//                 slipLimit: new BigNumber('0.03'), //optional
-//                 }
-//       try{
-//         const estimate = await thorchainAmm.estimateSwap(swapParams)
-//         print(estimate, swapParams.input)
-//         const transaction = await thorchainAmm.doSwap(combowallet, swapParams, thor[0].address)
-//         console.log(transaction)
-//         } catch (e) {
-//             console.error(e)
-//             } 
-//         }
-      
 
 
-    // return combowallet
 
-      // const bal = await combowallet.getAllBalances()
-//
-      // console.log("bal2:" + bal[2])
-      // console.log("bal2 address:" + bal[2].address)
-      // console.log("bal2 chain:" + bal[2].chain)
-      // console.log("bal2 balances[0]:" + bal[2].balances[0])
-      // console.log(bal[2].balances[1])
-      // const [ BTC, ETH, thor ] = bal
-      // console.log("BTC:" + BTC)
-      // console.log("ETH:" + ETH)
-      // console.log("THOR:")
-      // console.log(thor)
-      // const {chain , address, ...balance } = thor
-      // console.log("balance is:" + balance)
-      // const {balances} = balance
-      // console.log("balances is:" + balances)
+const beginSwap = async( wallet: Wallet, params: EstimateSwapParams, amm: ThorchainAMM ) => {
 
-    
-                          
+    try{
+        const estimate = await amm.estimateSwap(params)
+        console.log("inside swap")
+        print(estimate, params.input)
+    } catch(err){
+        console.log(err)
+        }
+    }
 
 
-const getbtcPool = async() => {
+    const getbtcPool = async() => {
 
     try {
             const baseUrl = MIDGARD_API_9R_URL
@@ -264,7 +212,7 @@ async function main(){
     const combowallet= new Wallet(Network.Mainnet, phrase)
     const midgard = new Midgard(Network.Mainnet) //defaults to mainnet
     const thorchainAmm = new ThorchainAMM(midgard)
-    run(combowallet, midgard, thorchainAmm)
+    await run(combowallet, thorchainAmm)
 
   }
 
@@ -272,3 +220,5 @@ async function main(){
 
 
 main()
+    .then(() => process.exit(0))
+    .catch((err) => console.error(err))
