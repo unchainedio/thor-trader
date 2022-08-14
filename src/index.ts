@@ -14,6 +14,7 @@ import {genKeystore, keystorelocation, keypasswd} from './genkey.js'
 // import { Wallet } from './wallet.js'
 import { Wallet } from '@xchainjs/xchain-thorchain-amm'
 import {balance} from '@cosmos-client/core/cjs/rest/bank/module.js'
+// import {Midgard} from './utils/midgard.js'
 // import {Wallet} from 'ethers'
 
 const theUrl = 'https://midgard.thorchain.info/v2/thorchain/inbound_addresses'
@@ -24,25 +25,24 @@ const btcpoolUrl= 'https://midgard.thorchain.info/v2/pool/BTC.BTC'
 
 
 
-const buildTransaction  = async () => {
-      const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
-      let phrase = await decryptFromKeystore(keystore1, keypasswd)
-      let toRune : boolean
+const run = async (wallet: Wallet, mg: Midgard, amm: ThorchainAMM) => {
+    // const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
+    // let phrase = await decryptFromKeystore(keystore1, keypasswd)
+    let toRune : boolean
     
-      
-      const combowallet= new Wallet(Network.Mainnet, phrase)
-      
+  
+    const combowallet = wallet
+    // console.log(combowallet)     
     
-      const allBalances = await combowallet.getAllBalances()
+    const allBalances = await combowallet.getAllBalances()
     
-      
-        const midgard = new Midgard(Network.Mainnet) //defaults to mainnet                                                                                                                                                                                    
-        const thorchainAmm = new ThorchainAMM(midgard)
-
-      const thor = _.filter(allBalances, { 'chain': 'THOR' })
-      const bnb = _.filter(allBalances, { 'chain': 'BNB' })
-      thor[0].balances? console.log('Printing Rune balance') : console.log('No Rune Balance')
-      thor[0].balances? console.log(                                                                                                                                                    
+    
+    const midgard = mg                                                                                                                                                                                    
+    const thorchainAmm = amm
+    const thor = _.filter(allBalances, { 'chain': 'THOR' })
+    const bnb = _.filter(allBalances, { 'chain': 'BNB' })
+    thor[0].balances? console.log('Printing Rune balance') : console.log('No Rune Balance')
+    thor[0].balances? console.log(                                                                                                                                                    
                 `${formatAssetAmountCurrency({                                                                                                                                
                   amount: baseToAsset(thor[0].balances[0].amount),                                                                                                                        
                   asset: thor[0].balances[0].asset,                                                                                                                                       
@@ -51,8 +51,8 @@ const buildTransaction  = async () => {
             ) : 
       
 
-      bnb[0].balances? console.log('Printing BNB balance') : console.log('No BNB Balance')
-      bnb[0].balances? console.log(                                                                                                                                                    
+    bnb[0].balances? console.log('Printing BNB balance') : console.log('No BNB Balance')
+    bnb[0].balances? console.log(                                                                                                                                                    
                     `${formatAssetAmountCurrency({                                                                                                                                
                       amount: baseToAsset(bnb[0].balances[0].amount),                                                                                                                        
                       asset: bnb[0].balances[0].asset,                                                                                                                                       
@@ -236,38 +236,6 @@ const  getInboundAddress = async() => {
 }
 
 
-const estSwap = async() => {
-
-    // const BUSD = assetFromString('BNB.BUSD-BD1')
-    // console.log(BUSD)
-    // if (!BUSD) throw Error('bad asset')
-        const BTC = assetFromString('BTC.BTC')
-        console.log(BTC)
-        if (!BTC) throw Error('bad asset')
-
-    try {
-  const midgard = new Midgard(Network.Mainnet) //defaults to mainnet
-  const thorchainAmm = new ThorchainAMM(midgard)
-  const swapParams: EstimateSwapParams = {
-    input: new CryptoAmount(assetToBase(assetAmount('36000')), AssetRuneNative),
-    destinationAsset: BTC,
-    // affiliateFeePercent: 0.003, //optional
-    slipLimit: new BigNumber('0.03'), //optional
-  }
-  const estimate = await thorchainAmm.estimateSwap(swapParams)
-  print(estimate, swapParams.input)
-
-  // convert fees (by defualt returned in RUNE) to a different asset (BUSD)
-  const estimateInBTC = await thorchainAmm.getFeesIn(estimate.totalFees, BTC)
-  estimate.totalFees = estimateInBTC
-  print(estimate, swapParams.input)
-
-
-} catch (e) {
-  console.error(e)
-}
-   
-}
 
 
 function print(estimate: SwapEstimate, input: CryptoAmount) {
@@ -289,16 +257,15 @@ function print(estimate: SwapEstimate, input: CryptoAmount) {
 }
 
 async function main(){
-  │   │                                                                                                                                                                                                                                                       
-  │   if( ! fs.existsSync(keystorelocation)){                                                                                                                                                                                                                 
-  │   │   genKeystore()                                                                                                                                                                                                                                       
-  │   │   │                                                                                                                                                                                                                                                   
-  │   │   buildTransaction()                                                                                                                                                                                                                                  
-  │   // const rune = thorWallet()                                                                                                                                                                                                                            
-  │   // console.log(rune)                                                                                                                                                                                                                                    
-  
-        }
-        buildTransaction()
+    if( ! fs.existsSync(keystorelocation)){                                                                                                                                                                                                                   genKeystore()
+    }
+    const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
+    let phrase = await decryptFromKeystore(keystore1, keypasswd) 
+    const combowallet= new Wallet(Network.Mainnet, phrase)
+    const midgard = new Midgard(Network.Mainnet) //defaults to mainnet
+    const thorchainAmm = new ThorchainAMM(midgard)
+    run(combowallet, midgard, thorchainAmm)
+
   }
 
 
