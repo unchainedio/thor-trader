@@ -114,7 +114,7 @@ const run = async (wallet: Wallet, amm: ThorchainAMM) => {
             // affiliateFeePercent: 0.003, //optional
             slipLimit: new BigNumber('0.03'), //optional
             }              
-            await beginSwap(combowallet, busdswapParams, thorchainAmm)
+            await sendSwap(combowallet, busdswapParams, thorchainAmm, bnb[0].address)
         break;
                 }
     }
@@ -122,12 +122,14 @@ const run = async (wallet: Wallet, amm: ThorchainAMM) => {
 
 
 
-const beginSwap = async( wallet: Wallet, params: EstimateSwapParams, amm: ThorchainAMM ) => {
+const sendSwap = async( wallet: Wallet, params: EstimateSwapParams, amm: ThorchainAMM, address: string ) => {
 
     try{
         const estimate = await amm.estimateSwap(params)
         console.log("inside swap")
         print(estimate, params.input)
+        const transaction = await amm.doSwap(wallet, params, address)                                                                                                                                                     
+        console.log(transaction)
     } catch(err){
         console.log(err)
         }
