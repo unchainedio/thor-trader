@@ -92,11 +92,8 @@ const run = async (wallet: Wallet, amm: ThorchainAMM) => {
                                 destinationAsset: RUNE,
                   // affiliateFeePercent: 0.003, //optional                                                                                                                                                                                                                     slipLimit: new BigNumber('0.03'), //optional                                                                                                                                                                                             }
             }
-            try{                                                                                                                                                                                                                                               
-                const estimate = await thorchainAmm.estimateSwap(swapParams)
-                print(estimate, swapParams.input)                                                                                                                                                                                                                
-                const transaction = await thorchainAmm.doSwap(combowallet, swapParams, thor[0].address)
-                console.log(transaction)                                                                                                                                                                                                                         
+            try{                                                                                                                                                                                                                                            
+                await sendSwap(combowallet, swapParams, thorchainAmm, thor[0].address)
                 } catch (e) {
                     console.error(e)
                     }
@@ -128,8 +125,15 @@ const sendSwap = async( wallet: Wallet, params: EstimateSwapParams, amm: Thorcha
         const estimate = await amm.estimateSwap(params)
         console.log("inside swap")
         print(estimate, params.input)
-        const transaction = await amm.doSwap(wallet, params, address)                                                                                                                                                     
+        if(estimate.canSwap){
+        const transaction = await amm.doSwap(wallet, params, address)
         console.log(transaction)
+        const jsonstring = JSON.stringify(transaction, null, 2)
+        console.log(jsonstring)
+        await fs.writeFileSync('./executedtrades.json', jsonstring, {flag:'a'})
+        // console.log(`Tx hash: ${transaction.hash},\n Tx url: ${transaction.url}\n WaitTime: ${transaction.waitTimeSeconds}`)
+        }                                                                                                                                                     
+        // console.log(transaction)
     } catch(err){
         console.log(err)
         }
