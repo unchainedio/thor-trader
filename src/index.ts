@@ -1,19 +1,19 @@
 import _ from 'lodash'
 import axios from 'axios'
 import chalk from 'chalk'
-import { MidgardApi, Configuration, MIDGARD_API_TS_URL, MIDGARD_API_9R_URL, MIDGARD_API_TC_URL } from '@xchainjs/xchain-midgard'
+import * as dotenv from 'dotenv'
 import { baseAmount, AssetBTC, AssetBNB, AssetETH, AssetRuneNative, assetAmount, formatAssetAmountCurrency, assetFromString, baseToAsset,assetToBase, Asset } from '@xchainjs/xchain-util'
 import { Network } from '@xchainjs/xchain-client'
 import { Wallet, ThorchainCache, LiquidityPoolCache, doSwap, CryptoAmount, EstimateSwapParams, Midgard, SwapEstimate, ThorchainAMM } from '@xchainjs/xchain-thorchain-amm'
 import { generatePhrase, validatePhrase, encryptToKeyStore, decryptFromKeystore } from '@xchainjs/xchain-crypto'
 import fs from 'fs'
 import BigNumber from 'bignumber.js'
-import { Client } from '@xchainjs/xchain-ethereum'
 import {genKeystore, keystorelocation, keypasswd} from './genkey.js'
 
-
-
-
+//dotenv.config()
+//console.log(process.env)
+//const PRIVATE_KEY = process.env.PRIVATE_KEY || ""
+//console.log((PRIVATE_KEY)
 
 const run = async (wallet: Wallet, amm: ThorchainAMM) => {
     // const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
@@ -124,7 +124,7 @@ const sendSwap = async( wallet: Wallet, params: EstimateSwapParams, amm: Thorcha
         const transaction = await amm.doSwap(wallet, params, address)
         console.log(transaction)
         const jsonstring = JSON.stringify(transaction, null, 2)
-        console.log(jsonstring)
+        //console.log(jsonstring)
         await fs.writeFileSync('./executedtrades.json', jsonstring, {flag:'a'})
         // console.log(`Tx hash: ${transaction.hash},\n Tx url: ${transaction.url}\n WaitTime: ${transaction.waitTimeSeconds}`)
         }                                                                                                                                                     
@@ -173,8 +173,13 @@ function print(estimate: SwapEstimate, input: CryptoAmount) {
 async function main(){
     if( ! fs.existsSync(keystorelocation)){                                                                                                                                                                                                                   genKeystore()
     }
-    const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
-    let phrase = await decryptFromKeystore(keystore1, keypasswd) 
+
+    dotenv.config()
+    const PRIVATE_KEY = process.env.PRIVATE_KEY || ""
+    //console.log('privatekey: ' + PRIVATE_KEY)
+    //const keystore1 = JSON.parse(fs.readFileSync(keystorelocation, 'utf8'))
+    //let phrase = await decryptFromKeystore(keystore1, keypasswd) 
+    let phrase = PRIVATE_KEY
     const midgard = new Midgard(Network.Mainnet) //defaults to mainnet
     const cache = new ThorchainCache(midgard)
     const thorchainAmm = new ThorchainAMM(cache)
