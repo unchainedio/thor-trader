@@ -2,8 +2,10 @@ import _ from 'lodash'
 import axios from 'axios'
 import chalk from 'chalk'
 import * as dotenv from 'dotenv'
+import * as dfd from "danfojs-node"
 import { baseAmount, AssetBTC, AssetBNB, AssetETH, AssetRuneNative, assetAmount, formatAssetAmountCurrency, assetFromString, baseToAsset,assetToBase, Asset } from '@xchainjs/xchain-util'
 import { Network } from '@xchainjs/xchain-client'
+import { NetworkApi, THORNODE_API_9R_URL, Configuration, TransactionsApi, QueueApi} from '@xchainjs/xchain-thornode'
 import { Wallet, ThorchainCache, LiquidityPoolCache, doSwap, CryptoAmount, EstimateSwapParams, Midgard, SwapEstimate, ThorchainAMM } from '@xchainjs/xchain-thorchain-amm'
 import { generatePhrase, validatePhrase, encryptToKeyStore, decryptFromKeystore } from '@xchainjs/xchain-crypto'
 import fs from 'fs'
@@ -169,6 +171,45 @@ function print(estimate: SwapEstimate, input: CryptoAmount) {
   }
   console.log(expanded)
 }
+async function getData(){
+    console.log(chalk.green("Gathering Data..."))
+    try {                                                                                                                                                                                                                                                   
+  │   │   const resp = await  axios.get('https://midgard.thorchain.info/v2/history/depths/BTC.BTC?interval=hour&count=24')                                                                                                                                                                                                               
+  │   │   console.log(resp.data['intervals'])
+          let df = new dfd.DataFrame(resp.data['intervals'])
+          console.log(df.columns)
+          //console.log(df['assetPrice, assetPriceUSD'])
+          df = df.assetPriceUSD
+          console.log("axis:" + df.axis)
+          console.log("max:" + df.max())
+          console.log("median;" + df.median())
+          console.log("min:" + df.min())
+          df.print()
+  │   │                                                                                                                                                                                                                                                       
+  │   } catch (err) {                                                                                                                                                                                                                                         
+  │   │   console.log(err);                                                                                                                                                                                                                                   
+  │   }                           
+    //const baseUrl = THORNODE_API_9R_URL
+    //const apiConfigMID = new Configuration({basePath: baseUrl})
+    //const thornode = new TransactionsApi(apiConfigMID)
+    //const queueApi = new QueueApi(apiConfigMID)
+    //const networkApi = new NetworkApi(apiConfigMID)
+    //const scheduledOutbound = await queueApi.queueScheduled()
+    //console.log(scheduledOutbound)
+    //const queueOutbound = await queueApi.queueOutbound()
+    //console.log(queueOutbound)
+    //const lastBlock = await networkApi.lastblock()
+    //console.log(lastBlock)
+    ////const test = await thornode.tx("BDF3507E7A4E4966BF415DD786AFD31AFA04FBF22BEA2EF2B906C9F067A30D83")
+
+
+    ////console.log(test.data.observed_tx)
+    //const lastBlockHeight = lastBlock.data.find((item) => item.thorchain)
+    //console.log(queueOutbound.data.find((item) => item.chain))
+    //const schedHeight = scheduledOutbound.data.find((item) => item.height)
+    //console.log(lastBlockHeight)
+    //console.log(schedHeight)
+}
 
 async function main(){
     if( ! fs.existsSync(keystorelocation)){                                                                                                                                                                                                                   genKeystore()
@@ -184,7 +225,9 @@ async function main(){
     const cache = new ThorchainCache(midgard)
     const thorchainAmm = new ThorchainAMM(cache)
     const combowallet= new Wallet(phrase, cache)
-    await run(combowallet, thorchainAmm)
+    
+    await getData()
+    //await run(combowallet, thorchainAmm)
 
   }
 
