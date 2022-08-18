@@ -16,6 +16,7 @@ import {
 } from '@xchainjs/xchain-midgard'
 import fs from 'fs'
 import BigNumber from 'bignumber.js'
+import {assetAmount, assetFromString, baseToAsset} from '@xchainjs/xchain-util'
 import {genKeystore, keystorelocation, keypasswd} from './genkey.js'
 
 //dotenv.config()
@@ -143,8 +144,36 @@ const sendSwap = async( wallet: Wallet, params: EstimateSwapParams, amm: Thorcha
     }
 
 
+                                                     
+  /**
+ * Estimate swap function
+ * Returns estimate swap object
+ */
+const estimateSwap = async () => {
+  try {
+    const network = Network.Mainnet //process.argv[2] as Network
+    const amount = '35700' //process.argv[3]
+    const fromAsset = assetFromString(`THOR.RUNE`)
+    const toAsset = assetFromString(`BTC.BTC`)
+    const midgard = new Midgard(network)
+    const cache = new ThorchainCache(midgard)
+    const thorchainAmm = new ThorchainAMM(cache)
 
-
+    const swapParams: EstimateSwapParams = {
+      input: new CryptoAmount(assetToBase(assetAmount(amount)), fromAsset),
+      destinationAsset: toAsset,
+      // affiliateFeePercent: 0.003, //optional
+      slipLimit: new BigNumber('0.03'), //optional
+    }
+    const estimate = await thorchainAmm.estimateSwap(swapParams)
+    print(estimate, swapParams.input)
+    const estimateInFromAsset = await thorchainAmm.getFeesIn(estimate.totalFees, fromAsset)
+    estimate.totalFees = estimateInFromAsset
+    print(estimate, swapParams.input)
+  } catch (e) {
+    console.error(e)
+  }
+}
 
 const  getInboundAddress = async() => {
     try {
@@ -177,6 +206,7 @@ function print(estimate: SwapEstimate, input: CryptoAmount) {
   }
   console.log(expanded)
 }
+
 async function getData(){
     console.log(chalk.green("Gathering Data..."))
     const midgardBaseUrl = MIDGARD_API_9R_URL
@@ -186,7 +216,8 @@ async function getData(){
 
 
     try {                                                                                                                                                                                                                                                   
-  │   │ const poolDetailsData = await midgardApi.getDepthHistory("BTC.BTC", "hour", "24")                                                                                                                                                                       
+  │   │ const poolDetailsData = await midgardApi.getDepthHistory("BTC.BTC", "hour", "24")
+        
   │     //console.log(poolDetailsData.data['intervals'])                                                                                                                                                                                                               
   │   │ 
           let df = new dfd.DataFrame(poolDetailsData.data['intervals'])
@@ -217,7 +248,7 @@ async function getData(){
     
     
     const lastBlock = await networkApi.lastblock()  
-    //console.log(lastBlock)
+    //console.log(lastBlock.data)
     //const test = await thornode.tx("BDF3507E7A4E4966BF415DD786AFD31AFA04FBF22BEA2EF2B906C9F067A30D83")
 
 
@@ -225,8 +256,8 @@ async function getData(){
     const lastBlockHeight = lastBlock.data.find((item) => item.thorchain)
     //console.log(queueOutbound.data.find((item) => item.chain))
     const schedHeight = scheduledOutbound.data.find((item) => item.height)
-    //console.log(lastBlockHeight)
-    //console.log(schedHeight)
+    console.log(lastBlockHeight)
+    console.log(schedHeight)
 }
 
 async function main(){
@@ -244,10 +275,12 @@ async function main(){
     const thorchainAmm = new ThorchainAMM(cache)
     const combowallet= new Wallet(phrase, cache)
     
+
+    await estimateSwap()
     await getData()
     //await run(combowallet, thorchainAmm)
 
-  }
+}
 
 
 
