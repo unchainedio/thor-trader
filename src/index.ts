@@ -8,6 +8,12 @@ import { Network } from '@xchainjs/xchain-client'
 import { NetworkApi, THORNODE_API_9R_URL, Configuration, TransactionsApi, QueueApi} from '@xchainjs/xchain-thornode'
 import { Wallet, ThorchainCache, LiquidityPoolCache, doSwap, CryptoAmount, EstimateSwapParams, Midgard, SwapEstimate, ThorchainAMM } from '@xchainjs/xchain-thorchain-amm'
 import { generatePhrase, validatePhrase, encryptToKeyStore, decryptFromKeystore } from '@xchainjs/xchain-crypto'
+import {
+  MidgardApi,
+  Configuration as MidgardConfig,
+  MIDGARD_API_9R_URL,
+  PoolDetail,
+} from '@xchainjs/xchain-midgard'
 import fs from 'fs'
 import BigNumber from 'bignumber.js'
 import {genKeystore, keystorelocation, keypasswd} from './genkey.js'
@@ -173,47 +179,59 @@ function print(estimate: SwapEstimate, input: CryptoAmount) {
 }
 async function getData(){
     console.log(chalk.green("Gathering Data..."))
+    const midgardBaseUrl = MIDGARD_API_9R_URL
+    const midgardApiConfig = new MidgardConfig({ basePath: midgardBaseUrl })
+    const midgardApi = new MidgardApi(midgardApiConfig)
+    
+
+
     try {                                                                                                                                                                                                                                                   
-  │   │   const resp = await  axios.get('https://midgard.thorchain.info/v2/history/depths/BTC.BTC?interval=hour&count=24')                                                                                                                                                                                                               
-  │   │   console.log(resp.data['intervals'])
-          let df = new dfd.DataFrame(resp.data['intervals'])
-          console.log(df.columns)
+  │   │ const poolDetailsData = await midgardApi.getDepthHistory("BTC.BTC", "hour", "24")                                                                                                                                                                       
+  │     //console.log(poolDetailsData.data['intervals'])                                                                                                                                                                                                               
+  │   │ 
+          let df = new dfd.DataFrame(poolDetailsData.data['intervals'])
+          //console.log(df.columns)
           //console.log(df['assetPrice, assetPriceUSD'])
           df = df.assetPriceUSD
-          console.log("axis:" + df.axis)
-          console.log("max:" + df.max())
-          console.log("median;" + df.median())
-          console.log("min:" + df.min())
-          df.print()
+          //console.log("axis:" + df.axis)
+          console.log("max: " + df.max())
+          console.log("median: " + df.median())
+          console.log("min: " + df.min())
+          //df.print()
   │   │                                                                                                                                                                                                                                                       
   │   } catch (err) {                                                                                                                                                                                                                                         
   │   │   console.log(err);                                                                                                                                                                                                                                   
   │   }                           
-    //const baseUrl = THORNODE_API_9R_URL
-    //const apiConfigMID = new Configuration({basePath: baseUrl})
-    //const thornode = new TransactionsApi(apiConfigMID)
-    //const queueApi = new QueueApi(apiConfigMID)
-    //const networkApi = new NetworkApi(apiConfigMID)
-    //const scheduledOutbound = await queueApi.queueScheduled()
+    const baseUrl = THORNODE_API_9R_URL
+    const apiConfigMID = new Configuration({basePath: baseUrl})
+    const thornode = new TransactionsApi(apiConfigMID)
+    const queueApi = new QueueApi(apiConfigMID)
+    const networkApi = new NetworkApi(apiConfigMID)
+    const scheduledOutbound = await queueApi.queueScheduled()
     //console.log(scheduledOutbound)
-    //const queueOutbound = await queueApi.queueOutbound()
-    //console.log(queueOutbound)
-    //const lastBlock = await networkApi.lastblock()
+    const queueOutbound = await queueApi.queueOutbound()
+    console.log(queueOutbound.data) 
+    //let outbound_df = new dfd.DataFrame(queueOutbound.data)
+        //outbound_df? console.log(outbound_df.coin) : console.log(chalk.green("NO OUTBOUND TRANSACTIONS IN QUE"))
+    queueOutbound.data? console.log(chalk.red("This many outbound: ") + queueOutbound.data.length) : console.log(chalk.green("Wow! 0 outbound"))
+    
+    
+    const lastBlock = await networkApi.lastblock()  
     //console.log(lastBlock)
-    ////const test = await thornode.tx("BDF3507E7A4E4966BF415DD786AFD31AFA04FBF22BEA2EF2B906C9F067A30D83")
+    //const test = await thornode.tx("BDF3507E7A4E4966BF415DD786AFD31AFA04FBF22BEA2EF2B906C9F067A30D83")
 
 
-    ////console.log(test.data.observed_tx)
-    //const lastBlockHeight = lastBlock.data.find((item) => item.thorchain)
+    //console.log(test.data.observed_tx)
+    const lastBlockHeight = lastBlock.data.find((item) => item.thorchain)
     //console.log(queueOutbound.data.find((item) => item.chain))
-    //const schedHeight = scheduledOutbound.data.find((item) => item.height)
+    const schedHeight = scheduledOutbound.data.find((item) => item.height)
     //console.log(lastBlockHeight)
     //console.log(schedHeight)
 }
 
 async function main(){
-    if( ! fs.existsSync(keystorelocation)){                                                                                                                                                                                                                   genKeystore()
-    }
+//if( ! fs.existsSync(keystorelocation)){                                                                                                                                                                                                                   //genKeystore()
+    ////  }
 
     dotenv.config()
     const PRIVATE_KEY = process.env.PRIVATE_KEY || ""
