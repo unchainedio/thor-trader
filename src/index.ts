@@ -17,6 +17,7 @@ import {
 import fs from 'fs'
 import BigNumber from 'bignumber.js'
 import {assetAmount, assetFromString, baseToAsset} from '@xchainjs/xchain-util'
+import {ThorchainAMM} from '@xchainjs/xchain-thorchain-amm'
 import {genKeystore, keystorelocation, keypasswd} from './genkey.js'
 
 //dotenv.config()
@@ -149,15 +150,15 @@ const sendSwap = async( wallet: Wallet, params: EstimateSwapParams, amm: Thorcha
  * Estimate swap function
  * Returns estimate swap object
  */
-const estimateSwap = async () => {
+const estimateSwap = async (amm: ThorchainAMM) => {
   try {
     const network = Network.Mainnet //process.argv[2] as Network
     const amount = '35700' //process.argv[3]
     const fromAsset = assetFromString(`THOR.RUNE`)
     const toAsset = assetFromString(`BTC.BTC`)
-    const midgard = new Midgard(network)
-    const cache = new ThorchainCache(midgard)
-    const thorchainAmm = new ThorchainAMM(cache)
+    //const midgard = new Midgard(network)
+    //const cache = new ThorchainCache(midgard)
+    const thorchainAmm = amm
 
     const swapParams: EstimateSwapParams = {
       input: new CryptoAmount(assetToBase(assetAmount(amount)), fromAsset),
@@ -173,17 +174,6 @@ const estimateSwap = async () => {
   } catch (e) {
     console.error(e)
   }
-}
-
-const  getInboundAddress = async() => {
-    try {
-        const resp = await  axios.get(theUrl)
-        console.log(resp.data);
-
-    } catch (err) {
-        console.log(err);
-    }
-
 }
 
 
@@ -275,9 +265,11 @@ async function main(){
     const thorchainAmm = new ThorchainAMM(cache)
     const combowallet= new Wallet(phrase, cache)
     
-
-    await estimateSwap()
-    await getData()
+    while(true){
+    await estimateSwap(thorchainAmm)
+    await new Promise(r => setTimeout(r, 6000))
+    }
+    //await getData()
     //await run(combowallet, thorchainAmm)
 
 }
