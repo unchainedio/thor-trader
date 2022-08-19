@@ -197,57 +197,52 @@ function print(estimate: SwapEstimate, input: CryptoAmount) {
   console.log(expanded)
 }
 
-async function getData(){
+async function getData(mapi: midgardApi, qapi: queueApi, napi: networkApi, tapi: TransactionsApi){
     console.log(chalk.green("Gathering Data..."))
-    const midgardBaseUrl = MIDGARD_API_9R_URL
-    const midgardApiConfig = new MidgardConfig({ basePath: midgardBaseUrl })
-    const midgardApi = new MidgardApi(midgardApiConfig)
     
+    const midgardApi = mapi
+    const thornode = tapi
+    const queueApi = qapi
+    const networkApi = napi 
 
 
-    try {                                                                                                                                                                                                                                                   
-  │   │ const poolDetailsData = await midgardApi.getDepthHistory("BTC.BTC", "hour", "24")
+   try {                                                                                                                                                                                                                                                   
+    const poolDetailsData = await midgardApi.getDepthHistory("BTC.BTC", "hour", "24")
         
-  │     //console.log(poolDetailsData.data['intervals'])                                                                                                                                                                                                               
-  │   │ 
-          let df = new dfd.DataFrame(poolDetailsData.data['intervals'])
-          //console.log(df.columns)
-          //console.log(df['assetPrice, assetPriceUSD'])
-          df = df.assetPriceUSD
-          //console.log("axis:" + df.axis)
-          console.log("max: " + df.max())
-          console.log("median: " + df.median())
-          console.log("min: " + df.min())
-          //df.print()
-  │   │                                                                                                                                                                                                                                                       
-  │   } catch (err) {                                                                                                                                                                                                                                         
-  │   │   console.log(err);                                                                                                                                                                                                                                   
-  │   }                           
-    const baseUrl = THORNODE_API_9R_URL
-    const apiConfigMID = new Configuration({basePath: baseUrl})
-    const thornode = new TransactionsApi(apiConfigMID)
-    const queueApi = new QueueApi(apiConfigMID)
-    const networkApi = new NetworkApi(apiConfigMID)
-    const scheduledOutbound = await queueApi.queueScheduled()
-    //console.log(scheduledOutbound)
-    const queueOutbound = await queueApi.queueOutbound()
-    console.log(queueOutbound.data) 
-    //let outbound_df = new dfd.DataFrame(queueOutbound.data)
-        //outbound_df? console.log(outbound_df.coin) : console.log(chalk.green("NO OUTBOUND TRANSACTIONS IN QUE"))
-    queueOutbound.data? console.log(chalk.red("This many outbound: ") + queueOutbound.data.length) : console.log(chalk.green("Wow! 0 outbound"))
+      //console.log(poolDetailsData.data['intervals'])                                                                                                                                                                                                               
+ 
+         let df = new dfd.DataFrame(poolDetailsData.data['intervals'])
+         //console.log(df.columns)
+         //console.log(df['assetPrice, assetPriceUSD'])
+         df = df.assetPriceUSD
+         //console.log("axis:" + df.axis)
+         console.log("max: " + df.max())
+         console.log("median: " + df.median())
+         console.log("min: " + df.min())
+                                                                                                
+    } catch (err) {                                                                                                                                                                                                                                         
+    console.log(err)                                                                                                                                                                                                                                   
+    }                            
+   const scheduledOutbound = await queueApi.queueScheduled()
+   //console.log(scheduledOutbound)
+   const queueOutbound = await queueApi.queueOutbound()
+   console.log(queueOutbound.data) 
+   //let outbound_df = new dfd.DataFrame(queueOutbound.data)
+       //outbound_df? console.log(outbound_df.coin) : console.log(chalk.green("NO OUTBOUND TRANSACTIONS IN QUE"))
+   queueOutbound.data? console.log(chalk.red("This many outbound: ") + queueOutbound.data.length) : console.log(chalk.green("Wow! 0 outbound"))
     
     
-    const lastBlock = await networkApi.lastblock()  
-    //console.log(lastBlock.data)
-    //const test = await thornode.tx("BDF3507E7A4E4966BF415DD786AFD31AFA04FBF22BEA2EF2B906C9F067A30D83")
+   const lastBlock = await networkApi.lastblock()  
+   //console.log(lastBlock.data)
+   //const test = await thornode.tx("BDF3507E7A4E4966BF415DD786AFD31AFA04FBF22BEA2EF2B906C9F067A30D83")
 
 
-    //console.log(test.data.observed_tx)
-    const lastBlockHeight = lastBlock.data.find((item) => item.thorchain)
-    //console.log(queueOutbound.data.find((item) => item.chain))
-    const schedHeight = scheduledOutbound.data.find((item) => item.height)
-    console.log(lastBlockHeight)
-    console.log(schedHeight)
+   //console.log(test.data.observed_tx)
+   const lastBlockHeight = lastBlock.data.find((item) => item.thorchain)
+   //console.log(queueOutbound.data.find((item) => item.chain))
+   const schedHeight = scheduledOutbound.data.find((item) => item.height)
+   console.log(lastBlockHeight)
+   console.log(schedHeight)
 }
 
 async function main(){
@@ -262,14 +257,22 @@ async function main(){
     let phrase = PRIVATE_KEY
     const midgard = new Midgard(Network.Mainnet) //defaults to mainnet
     const cache = new ThorchainCache(midgard)
+    const midgardBaseUrl = MIDGARD_API_9R_URL                                                                                                                                                                                                                   const midgardApiConfig = new MidgardConfig({ basePath: midgardBaseUrl })                                                                                                                                                                                
+    const midgardApi = new MidgardApi(midgardApiConfig)
+    const baseUrl = THORNODE_API_9R_URL                                                                                                                                                                                                                     
+    const apiConfigMID = new Configuration({ basePath: baseUrl })                                                                                                                                                                                             
+    const thornode = new TransactionsApi(apiConfigMID)                                                                                                                                                                                                      
+    const queueApi = new QueueApi(apiConfigMID)                                                                                                                                                                                                             
+    const networkApi = new NetworkApi(apiConfigMID)
+    
     const thorchainAmm = new ThorchainAMM(cache)
     const combowallet= new Wallet(phrase, cache)
     
-    while(true){
-    await estimateSwap(thorchainAmm)
-    await new Promise(r => setTimeout(r, 6000))
-    }
-    //await getData()
+    //while(true){
+    //await estimateSwap(thorchainAmm)
+    //await new Promise(r => setTimeout(r, 12000))
+    //}
+    await getData(midgardApi, queueApi, networkApi, thornode)
     //await run(combowallet, thorchainAmm)
 
 }
