@@ -19,6 +19,7 @@ import BigNumber from 'bignumber.js'
 import {assetAmount, assetFromString, baseToAsset} from '@xchainjs/xchain-util'
 import {ThorchainAMM} from '@xchainjs/xchain-thorchain-amm'
 import {genKeystore, keystorelocation, keypasswd} from './genkey.js'
+import {ThorchainCache} from '@xchainjs/xchain-thorchain-amm'
 
 //dotenv.config()
 //console.log(process.env)
@@ -207,21 +208,26 @@ async function getData(mapi: midgardApi, qapi: queueApi, napi: networkApi, tapi:
 
 
    try {                                                                                                                                                                                                                                                   
-    const poolDetailsData = await midgardApi.getDepthHistory("BTC.BTC", "hour", "24")
+        const poolDetailsData = await midgardApi.getDepthHistory("BTC.BTC", "hour", "24")
         
       //console.log(poolDetailsData.data['intervals'])                                                                                                                                                                                                               
  
          let df = new dfd.DataFrame(poolDetailsData.data['intervals'])
-         console.log(df.columns)
+         let btcrune 
+         //console.log(df.columns)
          //console.log(df['assetPrice, assetPriceUSD'])
          //df = df.assetPriceUSD
          //console.log("axis:" + df.axis)
          //console.log("max: " + df.max())
          //console.log("median: " + df.median())
-         console.log(df.assetDepth)
-         console.log(df.runeDepth)
-         console.log(df.runeDepth.div(df.assetDepth))
-         console.log(df.assetDepth.div(df.runeDepth))
+         //console.log(df.assetDepth)
+         //console.log(df.runeDepth)
+         //console.log(df.runeDepth.div(df.assetDepth))
+         btcrune = df.assetDepth.div(df.runeDepth)
+        
+         console.log("MAX RUNE/BTC in 24HR: " + btcrune.max())
+         console.log("MEDIAN RUNE/BTC in 24HR: " + btcrune.median())
+         console.log("MIN RUNE/BTC in 24HR: " + btcrune.min())
          //console.log("min: " + df.min())
                                                                                                 
     } catch (err) {                                                                                                                                                                                                                                         
@@ -236,27 +242,77 @@ async function getData(mapi: midgardApi, qapi: queueApi, napi: networkApi, tapi:
    //queueOutbound.data? console.log(chalk.red("This many outbound: ") + queueOutbound.data.length) : console.log(chalk.green("Wow! 0 outbound"))
     
     
-   //const lastBlock = await networkApi.lastblock()  
-   //console.log(lastBlock.data)
-   //const test = await thornode.tx("BDF3507E7A4E4966BF415DD786AFD31AFA04FBF22BEA2EF2B906C9F067A30D83")
+   }
 
+async function getPoolMaxMin(pool: String, interval: String, count: String, mapi: midgardApi): Object {
+        const midgardApi = mapi
+        let max_mean_min = {max: BigNumber(0), mean: BigNumber(0), min: BigNumber(0) }
+        //typeof(max_mean_min)
+    try{
+        const poolDetailsData = await midgardApi.getDepthHistory(pool, interval, count)
+        let df = new dfd.DataFrame(poolDetailsData.data['intervals'])
+        let poolprice
+        poolprice = df.assetDepth.div(df.runeDepth)
+        //console.log(typeof(poolprice.max()))
+        console.log(chalk.green(`MAX RUNE/${pool} in 24HR:   ${poolprice.max()}`))
+        max_mean_min.max = BigNumber(poolprice.max())
+        
+        console.log(chalk.yellow(`MEAN RUNE/${pool} in 24HR: ${poolprice.mean()}`))
+        max_mean_min.mean = BigNumber(poolprice.mean())
+        console.log(chalk.red(`MIN RUNE/${pool} in 24HR: ${poolprice.min()}`))
+        max_mean_min.min = BigNumber(poolprice.min())
 
-   //console.log(test.data.observed_tx)
-   //const lastBlockHeight = lastBlock.data.find((item) => item.thorchain)
-   ////console.log(queueOutbound.data.find((item) => item.chain))
-   //const schedHeight = scheduledOutbound.data.find((item) => item.height)
-   //console.log(lastBlockHeight)
-   //console.log(schedHeight)
+       // console.log(max_mean_min)
+    } catch(e){
+        console.log("error getting historical pool max/min/median")
+    }
+return max_mean_min
 }
-async function getPrice(fA: String, tA: String, tcc: ThorchainCache){
+
+async function getPrice(fA: String, tA: String, tcc: ThorchainCache): BigNumber{
     const fromAsset = assetFromString(fA)
     const toAsset = assetFromString(tA)
-
     const er = await tcc.getExchangeRate(fromAsset, toAsset)
-    console.log(er.toString())
+    console.log(`CURRENT ${fromAsset?.symbol}/${toAsset?.symbol} PRICE: ${er.toString()}`)
+    return er
 }
+
+
+
+// async function getSwapHistory(pool: String, interval: String, count: String, mapi: midgardApi){
+//     const midgardApi = mapi
+    
+//      try {                                                                                                                                                                                                                                                    
+//     const swapHistoryData = await midgardApi.getSwapHistory()
+//      } catch(e){
+//          console.log("error getting swapHistoryData")
+//      }
+
+//      console.log(swapHistoryData)
+
+
+// }
+
+async function printHistoricData(mapi: midgardApi, tcc: ThorchainCache){
+    const runebtcmaxmin = await getPoolMaxMin("BTC.BTC", "hour", "24", mapi)
+    const currentRUNEBTCPrice = await getPrice("THOR.RUNE", "BTC.BTC", tcc)
+    const runebtcdelta = currentRUNEBTCPrice.minus(runebtcmaxmin.mean)
+    //console.log(runebtcdelta.isPositive())
+    runebtcdelta.isPositive()? console.log(chalk.green(`24HR PRICE CHANGE FROM MEAN: ${((runebtcdelta.div(currentRUNEBTCPrice)).multipliedBy(100)).toString()} %`)) : console.log(chalk.red(`24HR PRICE CHANGE FROM MEAN: ${((runebtcdelta.div(currentRUNEBTCPrice)).multipliedBy(100)).toString()} %`))
+
+    console.log("----------------------------")
+    const runebusdmaxmin = await getPoolMaxMin("BNB.BUSD-BD1", "hour", "24", mapi)
+    const currentRUNEBUSDPrice = await getPrice("THOR.RUNE", "BNB.BUSD-BD1", tcc)
+    const runebusddelta = currentRUNEBUSDPrice.minus(runebusdmaxmin.mean)
+    //console.log(runebusddelta.toNumber())
+    runebusddelta.isPositive()? console.log(chalk.green(`24HR PRICE CHANGE FROM MEAN: ${((runebusddelta.div(currentRUNEBUSDPrice)).multipliedBy(100)).toString()}`)) : console.log(chalk.red(`24HR PRICE CHANGE FROM MEAN ${((runebusddelta.div(currentRUNEBUSDPrice)).multipliedBy(100)).toString()}`))
+
+
+}
+
+
 async function main(){
-//if( ! fs.existsSync(keystorelocation)){                                                                                                                                                                                                                   //genKeystore()
+//if( ! fis.existsSync(keystorelocation)){                                                                                                                                                                                                                   //genKeystore()
     ////  }
 
     dotenv.config()
@@ -282,8 +338,8 @@ async function main(){
     //await estimateSwap(thorchainAmm)
     //await new Promise(r => setTimeout(r, 12000))
     //}
-    await getPrice("THOR.RUNE", "BTC.BTC", cache)
-    await getData(midgardApi, queueApi, networkApi, thornode)
+    
+    await printHistoricData(midgardApi, cache)
     //await run(combowallet, thorchainAmm)
 
 }
@@ -293,4 +349,4 @@ async function main(){
 
 main()
     .then(() => process.exit(0))
-    .catch((err) => console.error(err))
+    .catch((err) => console.error(err)
