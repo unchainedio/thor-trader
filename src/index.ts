@@ -279,25 +279,26 @@ async function getPrice(fA: String, tA: String, tcc: ThorchainCache): BigNumber{
 
 
 
-// async function getSwapHistory(pool: String, interval: String, count: String, mapi: midgardApi){
-//     const midgardApi = mapi
-    
-//      try {                                                                                                                                                                                                                                                    
-//     const swapHistoryData = await midgardApi.getSwapHistory()
-//      } catch(e){
-//          console.log("error getting swapHistoryData")
-//      }
+async function getSwapHistory(pool: String, interval: String, count: String, mapi: midgardApi){
+    const mg = mapi
+    let swapHistoryData    
+    try {
+        swapHistoryData = await mg.getSwapHistory(pool, interval, count)
+        console.log(swapHistoryData.data['intervals'])
+     } catch(e){
+        console.log("error getting swapHistoryData")
+     }
 
-//      console.log(swapHistoryData)
+     console.log(swapHistoryData)
 
 
-// }
+}
 
 async function printHistoricData(mapi: midgardApi, tcc: ThorchainCache){
     const runebtcmaxmin = await getPoolMaxMin("BTC.BTC", "hour", "24", mapi)
     const currentRUNEBTCPrice = await getPrice("THOR.RUNE", "BTC.BTC", tcc)
     const runebtcdelta = currentRUNEBTCPrice.minus(runebtcmaxmin.mean)
-    //console.log(runebtcdelta.isPositive())
+    console.log(runebtcmaxmin)
     runebtcdelta.isPositive()? console.log(chalk.green(`24HR PRICE CHANGE FROM MEAN: ${((runebtcdelta.div(currentRUNEBTCPrice)).multipliedBy(100)).toString()} %`)) : console.log(chalk.red(`24HR PRICE CHANGE FROM MEAN: ${((runebtcdelta.div(currentRUNEBTCPrice)).multipliedBy(100)).toString()} %`))
 
     console.log("----------------------------")
@@ -306,6 +307,13 @@ async function printHistoricData(mapi: midgardApi, tcc: ThorchainCache){
     const runebusddelta = currentRUNEBUSDPrice.minus(runebusdmaxmin.mean)
     //console.log(runebusddelta.toNumber())
     runebusddelta.isPositive()? console.log(chalk.green(`24HR PRICE CHANGE FROM MEAN: ${((runebusddelta.div(currentRUNEBUSDPrice)).multipliedBy(100)).toString()}`)) : console.log(chalk.red(`24HR PRICE CHANGE FROM MEAN ${((runebusddelta.div(currentRUNEBUSDPrice)).multipliedBy(100)).toString()}`))
+
+    console.log("----------------------------")                                                                                                                                                                                                             
+    const runeethmaxmin = await getPoolMaxMin("ETH.ETH", "hour", "24", mapi)                                                                                                                                                                          
+    const currentRUNEETHPrice = await getPrice("THOR.RUNE", "ETH.ETH", tcc)                                                                                                                                                                           
+    const runeethdelta = currentRUNEETHPrice.minus(runeethmaxmin.mean)                                                                                                                                                                                   
+    //console.log(runebusddelta.toNumber())
+  runeethdelta.isPositive()? console.log(chalk.green(`24HR PRICE CHANGE FROM MEAN: ${((runeethdelta.div(currentRUNEETHPrice)).multipliedBy(100)).toString()}`)) : console.log(chalk.red(`24HR PRICE CHANGE FROM MEAN ${((runeethdelta.div(currentRUNEETHPrice)).multipliedBy(100)).toString()}`))
 
 
 }
@@ -338,7 +346,12 @@ async function main(){
     //await estimateSwap(thorchainAmm)
     //await new Promise(r => setTimeout(r, 12000))
     //}
-    
+    //const sh = await midgardApi.getSwapHistory("BTC.BTC", "hour", 24)
+    //console.log(sh)
+    //const lh = await midgardApi.getLiquidityHistory("BTC.BTC", "hour", 24)
+    //console.log(lh.data['intervals'])
+    //console.log(lh.data['intervals'].length)
+    //await getSwapHistory("BTC.BTC", "hour", "24", midgardApi)
     await printHistoricData(midgardApi, cache)
     //await run(combowallet, thorchainAmm)
 
