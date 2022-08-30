@@ -343,7 +343,7 @@ async function main(){
     const combowallet= new Wallet(phrase, cache)
     
     //while(true){
-    //await estimateSwap(thorchainAmm)
+    await estimateSwap(thorchainAmm)
     //await new Promise(r => setTimeout(r, 12000))
     //}
     //const sh = await midgardApi.getSwapHistory("BTC.BTC", "hour", 24)
